@@ -259,20 +259,24 @@ class _ExchangeDialogState extends State<_ExchangeDialog> {
         return;
       }
       setState(
-          () => _message = '가져오기에 실패했습니다. 새로 만들다 만 문서는 지웠고, 기존 메모는 그대로입니다.');
+        () => _message = '가져오기에 실패했습니다. 새로 만들다 만 문서는 지웠고, 기존 메모는 그대로입니다.',
+      );
     }
   }
 }
 
 Future<ExchangeDocument> _readDocument(ViewPB view) async {
   final opened = await DocumentService().getDocument(documentId: view.id);
-  final nodes = opened.fold((data) {
-    final document = data.toDocument();
-    if (document == null) {
-      return const <Map<String, Object?>>[];
-    }
-    return document.root.children.map(_nodeToMap).toList();
-  }, (_) => const <Map<String, Object?>>[]);
+  final nodes = opened.fold(
+    (data) {
+      final document = data.toDocument();
+      if (document == null) {
+        return const <Map<String, Object?>>[];
+      }
+      return document.root.children.map(_nodeToMap).toList();
+    },
+    (_) => const <Map<String, Object?>>[],
+  );
   return ExchangeDocument(
     sourceId: view.id,
     title: view.name,
