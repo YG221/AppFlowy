@@ -1,6 +1,7 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/mobile/presentation/widgets/widgets.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/protobuf.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -63,17 +64,18 @@ class AddNewPageWidgetBottomSheet extends StatelessWidget {
           showBottomBorder: false,
           onTap: () => onAction(ViewLayoutPB.Calendar),
         ),
-        FlowyOptionTile.text(
-          text: LocaleKeys.chat_newChat.tr(),
-          height: 52.0,
-          leftIcon: const FlowySvg(
-            FlowySvgs.chat_ai_page_s,
-            size: Size.square(20),
+        if (!PersonalLocalEdition.enabled)
+          FlowyOptionTile.text(
+            text: LocaleKeys.chat_newChat.tr(),
+            height: 52.0,
+            leftIcon: const FlowySvg(
+              FlowySvgs.chat_ai_page_s,
+              size: Size.square(20),
+            ),
+            showTopBorder: false,
+            showBottomBorder: false,
+            onTap: () => onAction(ViewLayoutPB.Chat),
           ),
-          showTopBorder: false,
-          showBottomBorder: false,
-          onTap: () => onAction(ViewLayoutPB.Chat),
-        ),
       ],
     );
   }

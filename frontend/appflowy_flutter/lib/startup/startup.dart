@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:appflowy/env/cloud_env.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/desktop_toolbar/desktop_floating_toolbar.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/desktop_toolbar/link/link_hover_menu.dart';
 import 'package:appflowy/util/expand_views.dart';
@@ -145,9 +146,11 @@ class FlowyRunner {
           // It is unable to get the device information from the test environment.
           const ApplicationInfoTask(),
           // The auto update task should be placed after the ApplicationInfoTask to fetch the latest version.
-          if (!mode.isIntegrationTest) AutoUpdateTask(),
+          if (!mode.isIntegrationTest && !PersonalLocalEdition.enabled)
+            AutoUpdateTask(),
           const HotKeyTask(),
-          if (isAppFlowyCloudEnabled) InitAppFlowyCloudTask(),
+          if (isAppFlowyCloudEnabled && !PersonalLocalEdition.enabled)
+            InitAppFlowyCloudTask(),
           const InitAppWidgetTask(),
           const InitPlatformServiceTask(),
           const RecentServiceTask(),

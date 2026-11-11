@@ -1,6 +1,8 @@
 import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
+import 'package:appflowy/personal_local/personal_local_search.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/command_palette/command_palette_bloc.dart';
@@ -156,8 +158,14 @@ class _CommandPaletteControllerState extends State<_CommandPaletteController> {
         actions: {
           _ToggleCommandPaletteIntent:
               CallbackAction<_ToggleCommandPaletteIntent>(
-            onInvoke: (intent) => _toggleNotifier.value = _toggleNotifier.value
-                .copyWith(isOpen: !_toggleNotifier.value.isOpen),
+            onInvoke: (intent) {
+              if (PersonalLocalEdition.enabled) {
+                showPersonalLocalSearch(context);
+                return null;
+              }
+              return _toggleNotifier.value = _toggleNotifier.value
+                  .copyWith(isOpen: !_toggleNotifier.value.isOpen);
+            },
           ),
         },
         shortcuts: {
@@ -180,7 +188,7 @@ class CommandPaletteModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final workspaceState = context.read<UserWorkspaceBloc?>()?.state;
-    final showAskingAI =
+    final showAskingAI = !PersonalLocalEdition.enabled &&
         workspaceState?.userProfile.workspaceType == WorkspaceTypePB.ServerW;
     return BlocListener<CommandPaletteBloc, CommandPaletteState>(
       listener: (_, state) {

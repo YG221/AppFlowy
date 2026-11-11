@@ -1,0 +1,23 @@
+name: personal_local_ui
+description: Korean local-edition widgets for search, batch edit, exchange, and popout.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  personal_local_core:
+    path: ../personal_local_core
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
