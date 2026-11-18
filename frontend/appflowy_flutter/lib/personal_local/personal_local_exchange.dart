@@ -138,13 +138,7 @@ class _ExchangeDialogState extends State<_ExchangeDialog> {
     }
     final chosen =
         widget.documents.where((view) => _selected.contains(view.id));
-    final exchangeDocs = <ExchangeDocument>[];
-    for (final view in chosen) {
-      exchangeDocs.add(await _readDocument(view));
-    }
-    final bytes = DocumentBundle.exportBundle(
-      ExportRequest(documents: exchangeDocs),
-    );
+    final bytes = await exportPersonalViews(chosen);
     final path = await FilePicker.platform.saveFile(
       dialogTitle: '문서 내보내기',
       fileName: 'appflowy-documents.afbundle.zip',
@@ -197,64 +191,17 @@ class _ExchangeDialogState extends State<_ExchangeDialog> {
     if (plan == null) {
       return;
     }
-    final created = <String>[];
     try {
-      final root = await getIt<ApplicationDataStorage>().getPath();
-      for (final document in plan.documents) {
-        if (document.isEncrypted) {
-          final directory = Directory(
-            path.join(root, 'personal_local_protected', document.newId),
-          );
-          await directory.create(recursive: true);
-          final file = File(path.join(directory.path, 'note.afpl'));
-          await file.writeAsBytes(document.encryptedEnvelope!, flush: true);
-          final explanation = paragraphNode(
-            text:
-                '이 메모의 본문은 암호화된 파일로만 보관됩니다. 이 버전은 협업 저장소의 평문을 지울 수 없어 잠긴 본문을 열지 않습니다.',
-          );
-          final page = pageNode(children: [explanation]);
-          explanation.parent = page;
-          final placeholder = Document(root: page);
-          final initial =
-              DocumentDataPBFromTo.fromDocument(placeholder)?.writeToBuffer();
-          final view = await ViewBackendService.createView(
-            layoutType: ViewLayoutPB.Document,
-            parentViewId: widget.workspaceId,
-            name: '잠긴 메모',
-            initialDataBytes: initial,
-            section: ViewSectionPB.Public,
-          );
-          final createdView =
-              view.fold((value) => value, (error) => throw error);
-          created.add(createdView.id);
-          continue;
-        }
-        final nodes = await _materializeAttachments(
-          document: document,
-          storageRoot: root,
-        );
-        final editorDocument = _documentFromNodes(nodes);
-        final initial =
-            DocumentDataPBFromTo.fromDocument(editorDocument)?.writeToBuffer();
-        final view = await ViewBackendService.createView(
-          layoutType: ViewLayoutPB.Document,
-          parentViewId: widget.workspaceId,
-          name: document.title,
-          initialDataBytes: initial,
-          section: ViewSectionPB.Public,
-        );
-        final createdView = view.fold((value) => value, (error) => throw error);
-        created.add(createdView.id);
-      }
+      final created = await commitPersonalImport(
+        plan: plan,
+        workspaceId: widget.workspaceId,
+      );
       if (!mounted) {
         return;
       }
       setState(() => _message = '새 문서 ${created.length}개를 추가했습니다.');
       _pendingImport = null;
-    } catch (error) {
-      for (final id in created) {
-        await ViewBackendService.deleteView(viewId: id);
-      }
+    } on PersonalImportException {
       if (!mounted) {
         return;
       }
@@ -262,6 +209,94 @@ class _ExchangeDialogState extends State<_ExchangeDialog> {
         () => _message = '가져오기에 실패했습니다. 새로 만들다 만 문서는 지웠고, 기존 메모는 그대로입니다.',
       );
     }
+  }
+}
+
+class PersonalImportException implements Exception {
+  const PersonalImportException([this.cause]);
+
+  final Object? cause;
+
+  @override
+  String toString() => 'PersonalImportException: $cause';
+}
+
+/// Reads live collab documents and writes them as a zip the user saves.
+Future<Uint8List> exportPersonalViews(Iterable<ViewPB> views) async {
+  final exchangeDocs = <ExchangeDocument>[];
+  for (final view in views) {
+    exchangeDocs.add(await _readDocument(view));
+  }
+  return DocumentBundle.exportBundle(
+    ExportRequest(documents: exchangeDocs),
+  );
+}
+
+/// Creates new documents from an import plan. Existing ids are not reused.
+/// A failure deletes only the views this call created.
+Future<List<String>> commitPersonalImport({
+  required ImportPlan plan,
+  required String workspaceId,
+}) async {
+  final created = <String>[];
+  try {
+    final root = await getIt<ApplicationDataStorage>().getPath();
+    for (final document in plan.documents) {
+      final storageId = _uniqueStorageId(document.newId);
+      if (document.isEncrypted) {
+        final directory = Directory(
+          path.join(root, 'personal_local_protected', storageId),
+        );
+        await directory.create(recursive: true);
+        final file = File(path.join(directory.path, 'note.afpl'));
+        await file.writeAsBytes(document.encryptedEnvelope!, flush: true);
+        final explanation = paragraphNode(
+          text:
+              '이 메모의 본문은 암호화된 파일로만 보관됩니다. 이 버전은 협업 저장소의 평문을 지울 수 없어 잠긴 본문을 열지 않습니다.',
+        );
+        final page = pageNode(children: [explanation]);
+        explanation.parent = page;
+        final placeholder = Document(root: page);
+        final initial =
+            DocumentDataPBFromTo.fromDocument(placeholder)?.writeToBuffer();
+        final view = await ViewBackendService.createView(
+          layoutType: ViewLayoutPB.Document,
+          parentViewId: workspaceId,
+          name: '잠긴 메모',
+          initialDataBytes: initial,
+          section: ViewSectionPB.Public,
+        );
+        final createdView = view.fold((value) => value, (error) => throw error);
+        created.add(createdView.id);
+        continue;
+      }
+      final nodes = await _materializeAttachments(
+        document: document,
+        storageRoot: root,
+        storageId: storageId,
+      );
+      final editorDocument = _documentFromNodes(nodes);
+      final initial =
+          DocumentDataPBFromTo.fromDocument(editorDocument)?.writeToBuffer();
+      final view = await ViewBackendService.createView(
+        layoutType: ViewLayoutPB.Document,
+        parentViewId: workspaceId,
+        name: document.title,
+        initialDataBytes: initial,
+        section: ViewSectionPB.Public,
+      );
+      final createdView = view.fold((value) => value, (error) => throw error);
+      created.add(createdView.id);
+    }
+    return created;
+  } catch (error) {
+    for (final id in created) {
+      await ViewBackendService.deleteView(viewId: id);
+    }
+    if (error is PersonalImportException) {
+      rethrow;
+    }
+    throw PersonalImportException(error);
   }
 }
 
@@ -327,12 +362,18 @@ Node _nodeFromMap(Map<String, Object?> json) {
   return node;
 }
 
+String _uniqueStorageId(String newId) {
+  final nonce = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
+  return '$newId-$nonce';
+}
+
 Future<List<Map<String, Object?>>> _materializeAttachments({
   required ImportedDocument document,
   required String storageRoot,
+  required String storageId,
 }) async {
   final directory = Directory(
-    path.join(storageRoot, 'personal_local_imports', document.newId),
+    path.join(storageRoot, 'personal_local_imports', storageId),
   );
   final resolvedRoot = directory.absolute.path;
   await directory.create(recursive: true);
