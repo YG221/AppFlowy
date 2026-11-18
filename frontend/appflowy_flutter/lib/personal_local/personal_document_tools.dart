@@ -52,7 +52,7 @@ class _PersonalDocumentToolsState extends State<PersonalDocumentTools> {
     final body = _blocksFromEditor(widget.editorState)
         .map((block) => block.text)
         .join('\n');
-    await openMemoPopout(title: widget.title, body: body, obscured: false);
+    await openMemoPopout(title: widget.title, body: body);
   }
 
   @override
@@ -66,21 +66,6 @@ class _PersonalDocumentToolsState extends State<PersonalDocumentTools> {
             children: [
               TextButton(onPressed: _openBatch, child: const Text('문단 선택')),
               TextButton(onPressed: _popout, child: const Text('작은 창으로 열기')),
-              TextButton(
-                onPressed: () {
-                  showDialog<void>(
-                    context: context,
-                    builder: (context) => const Dialog(
-                      child: SizedBox(
-                        width: 560,
-                        height: 480,
-                        child: LockBlockerPanel(),
-                      ),
-                    ),
-                  );
-                },
-                child: const Text('비밀번호 잠금'),
-              ),
             ],
           ),
         ),

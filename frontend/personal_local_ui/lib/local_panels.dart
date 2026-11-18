@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:personal_local_core/personal_local_core.dart';
 import 'package:personal_local_ui/personal_copy.dart';
 
 class MemoPopoutView extends StatelessWidget {
@@ -8,7 +7,6 @@ class MemoPopoutView extends StatelessWidget {
     required this.title,
     required this.body,
     required this.readOnly,
-    this.obscured = false,
     this.onResize,
     this.onClose,
   });
@@ -16,7 +14,6 @@ class MemoPopoutView extends StatelessWidget {
   final String title;
   final String body;
   final bool readOnly;
-  final bool obscured;
   final VoidCallback? onResize;
   final VoidCallback? onClose;
 
@@ -66,59 +63,11 @@ class MemoPopoutView extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                obscured
-                    ? PersonalCopy.text(
-                        context,
-                        '잠긴 메모입니다. 본문은 이 창에 표시하지 않습니다.',
-                        'This memo is locked. The body is not shown.',
-                      )
-                    : body,
+                body,
                 key: const Key('popout-body'),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class LockBlockerPanel extends StatelessWidget {
-  const LockBlockerPanel({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surface,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            PersonalCopy.text(context, '메모 비밀번호 잠금', 'Memo password lock'),
-            style: theme.textTheme.titleLarge,
-            key: const Key('lock-title'),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            StorageEncryptionBlocker.summaryKo,
-            key: const Key('lock-summary'),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            PersonalCopy.text(
-              context,
-              '제목을 숨기는 잠금이 완료된 것이 아닙니다. 작업공간 전체 암호화도 아닙니다.',
-              'This is not a completed lock, and it does not encrypt the workspace.',
-            ),
-            key: const Key('lock-scope'),
-          ),
-          for (final store in StorageEncryptionBlocker.stores)
-            ListTile(
-              key: Key('lock-store-${store.id}'),
-              title: Text(store.id),
-              subtitle: Text(store.detailKo),
-            ),
         ],
       ),
     );

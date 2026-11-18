@@ -74,8 +74,7 @@ void main() {
     expect(session.blocks[0].textColor, isNull);
   });
 
-  testWidgets('popout is labeled read-only and hides a locked body',
-      (tester) async {
+  testWidgets('popout is labeled read-only and shows the body', (tester) async {
     await pump(
       tester,
       const MemoPopoutView(
@@ -86,29 +85,14 @@ void main() {
     );
     expect(find.byKey(const Key('popout-banner')), findsOneWidget);
     expect(find.text('원본 본문'), findsOneWidget);
-    await pump(
-      tester,
-      const MemoPopoutView(
-        title: '메모',
-        body: '원본 본문',
-        readOnly: true,
-        obscured: true,
-      ),
-    );
-    expect(find.text('원본 본문'), findsNothing);
-    expect(find.textContaining('잠긴 메모'), findsOneWidget);
+    expect(find.textContaining('잠긴'), findsNothing);
   });
 
-  testWidgets('local gate has no login and lock panel refuses cosmetic lock',
-      (tester) async {
+  testWidgets('local gate has no login', (tester) async {
     await pump(tester, LocalCreateGate(onCreate: () {}));
     expect(find.text('로그인'), findsNothing);
     expect(find.byKey(const Key('create-local-workspace')), findsOneWidget);
-
-    await pump(tester, const LockBlockerPanel());
-    expect(find.byKey(const Key('lock-summary')), findsOneWidget);
-    expect(find.textContaining('작업공간 전체'), findsWidgets);
-    expect(find.byKey(const Key('lock-store-tantivy')), findsOneWidget);
+    expect(find.textContaining('비밀번호 잠금'), findsNothing);
   });
 
   testWidgets('import preview names new documents', (tester) async {

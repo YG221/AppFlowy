@@ -12,20 +12,17 @@ class MemoPopoutArgs {
     required this.title,
     required this.body,
     required this.readOnly,
-    required this.obscured,
   });
 
   final String title;
   final String body;
   final bool readOnly;
-  final bool obscured;
 
   Map<String, Object?> toJson() => {
         'kind': memoPopoutKind,
         'title': title,
-        'body': obscured ? '' : body,
+        'body': body,
         'readOnly': true,
-        'obscured': obscured,
       };
 
   static MemoPopoutArgs? tryParse(String raw) {
@@ -40,7 +37,6 @@ class MemoPopoutArgs {
       title: decoded['title'] as String? ?? '',
       body: decoded['body'] as String? ?? '',
       readOnly: true,
-      obscured: decoded['obscured'] == true,
     );
   }
 }
@@ -114,11 +110,7 @@ class _MemoPopoutAppState extends State<MemoPopoutApp> with WindowListener {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(
-                  widget.args.obscured
-                      ? '잠긴 메모입니다. 본문은 이 창에 표시하지 않습니다.'
-                      : widget.args.body,
-                ),
+                child: Text(widget.args.body),
               ),
             ),
           ],
@@ -131,13 +123,11 @@ class _MemoPopoutAppState extends State<MemoPopoutApp> with WindowListener {
 Future<void> openMemoPopout({
   required String title,
   required String body,
-  required bool obscured,
 }) async {
   final args = MemoPopoutArgs(
     title: title,
     body: body,
     readOnly: true,
-    obscured: obscured,
   );
   final controller = await WindowController.create(
     WindowConfiguration(
