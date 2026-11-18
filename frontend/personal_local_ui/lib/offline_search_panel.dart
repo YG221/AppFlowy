@@ -9,11 +9,13 @@ class OfflineSearchPanel extends StatefulWidget {
     required this.loadDocuments,
     required this.onOpen,
     this.excludedDocumentIds = const {},
+    this.initialQuery = '',
   });
 
   final Future<List<SearchDocument>> Function() loadDocuments;
   final ValueChanged<SearchHit> onOpen;
   final Set<String> excludedDocumentIds;
+  final String initialQuery;
 
   @override
   State<OfflineSearchPanel> createState() => _OfflineSearchPanelState();
@@ -28,6 +30,22 @@ class _OfflineSearchPanelState extends State<OfflineSearchPanel> {
   List<SearchHit> _hits = const [];
   var _selected = 0;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final query = widget.initialQuery.trim();
+    if (query.isEmpty) {
+      return;
+    }
+    _controller.text = query;
+    _loading = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _run(query);
+      }
+    });
+  }
 
   @override
   void dispose() {

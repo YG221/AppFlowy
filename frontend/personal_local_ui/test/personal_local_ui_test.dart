@@ -53,6 +53,27 @@ void main() {
     expect(find.byKey(const Key('search-none')), findsOneWidget);
   });
 
+  testWidgets('an initial query searches titles and body text', (tester) async {
+    await pump(
+      tester,
+      OfflineSearchPanel(
+        initialQuery: '김치찌개',
+        loadDocuments: () async => const [
+          SearchDocument(
+            id: 'doc',
+            title: '회의 메모',
+            blocks: [
+              SearchBlock(id: 'b', text: '본문에만 김치찌개'),
+            ],
+          ),
+        ],
+        onOpen: (_) {},
+      ),
+    );
+    await tester.pump();
+    expect(find.byKey(const Key('search-hit-doc')), findsOneWidget);
+  });
+
   testWidgets('batch selection skips the middle paragraph', (tester) async {
     final session = BatchEditSession(const [
       MemoBlock(id: 'a', text: '첫째'),

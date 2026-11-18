@@ -55,7 +55,10 @@ List<SearchBlock> _blocksFromDocument(Document? document) {
   return blocks;
 }
 
-Future<void> showPersonalLocalSearch(BuildContext context) {
+Future<void> showPersonalLocalSearch(
+  BuildContext context, {
+  String initialQuery = '',
+}) {
   return showDialog<void>(
     context: context,
     builder: (dialogContext) {
@@ -65,6 +68,7 @@ Future<void> showPersonalLocalSearch(BuildContext context) {
           height: 560,
           child: OfflineSearchPanel(
             loadDocuments: loadOfflineSearchDocuments,
+            initialQuery: initialQuery,
             onOpen: (hit) {
               Navigator.of(dialogContext).pop();
               hit.documentId.navigateTo();
