@@ -1,10 +1,13 @@
 name: personal-local-windows-portable
 
 # Builds a Windows x64 portable zip for this fork. It does not publish a
-# GitHub Release. Run it with workflow_dispatch. The workflow file also has
-# to exist on the default branch before GitHub will accept a dispatch.
+# GitHub Release. A push to this edition branch starts the build. Manual
+# dispatch stays available. The default branch is not modified.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - cursor/personal-local-edition-8fed
 
 env:
   FLUTTER_VERSION: "3.27.4"
