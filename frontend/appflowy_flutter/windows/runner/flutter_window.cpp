@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "desktop_multi_window/desktop_multi_window_plugin.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -25,6 +26,12 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  // A second engine must not register the Rust backend, bitsdojo, or
+  // window_manager. Those plugins abort the process (ucrtbase 0xc0000409)
+  // when they start twice. The popout reads its text from Dart entrypoint
+  // arguments and only needs the multi-window channel, which Create()
+  // registers itself.
+  DesktopMultiWindowSetWindowCreatedCallback(nullptr);
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {

@@ -1,0 +1,140 @@
+name: personal-local-windows-portable
+
+# Builds a Windows x64 portable zip for this fork. It does not publish a
+# GitHub Release. A push to this edition branch starts the build. Manual
+# dispatch stays available. The default branch is not modified.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/personal-local-edition-8fed
+
+env:
+  FLUTTER_VERSION: "3.27.4"
+  RUST_TOOLCHAIN: "1.85.0"
+  # Flutter --build-name must be a semver. The in-tree version is 0.11.4.
+  # The downloaded zip keeps the personal-local name.
+  APP_VERSION: "0.11.4"
+  CARGO_BUILD_JOBS: "2"
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  build-for-windows:
+    name: windows-x64 portable zip
+    # windows-2019 was removed on 2025-06-30. windows-2022 still has
+    # Visual Studio 2022, which this Rust toolchain can use.
+    runs-on: windows-2022
+    timeout-minutes: 180
+    env:
+      WINDOWS_APP_RELEASE_PATH: frontend\appflowy_flutter\product\0.11.4\windows
+      WINDOWS_ZIP_NAME: AppFlowy-personal-local-windows-x86_64.zip
+    steps:
+      - name: Enable long paths
+        run: git config --global core.longpaths true
+
+      - name: Free disk space
+        shell: pwsh
+        run: |
+          Write-Host "Free bytes before cleanup:"
+          (Get-PSDrive C).Free
+          $unused = @(
+            "$env:ProgramFiles\Android",
+            "${env:ProgramFiles(x86)}\Android",
+            "$env:LOCALAPPDATA\Android",
+            "$env:ProgramFiles\Microsoft SQL Server",
+            "$env:ProgramFiles\PostgreSQL",
+            "$env:ProgramFiles\MongoDB"
+          )
+          foreach ($path in $unused) {
+            if (Test-Path $path) {
+              Write-Host "Removing $path"
+              Remove-Item $path -Recurse -Force -ErrorAction SilentlyContinue
+            }
+          }
+          Write-Host "Free bytes after cleanup:"
+          (Get-PSDrive C).Free
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.85.0
+        with:
+          targets: x86_64-pc-windows-msvc
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: Install cargo-make and duckscript
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-make@0.37.18, duckscript_cli
+
+      - name: Install prerequisites
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          vcpkg integrate install
+
+      - name: Build Windows app
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          flutter config --enable-windows-desktop
+          dart ./scripts/flutter_release_build/build_flowy.dart exclude-directives . ${{ env.APP_VERSION }}
+          cargo make --env APP_VERSION=${{ env.APP_VERSION }} --profile production-windows-x86 appflowy
+          $makeExit = $LASTEXITCODE
+          $release = Join-Path (Get-Location) "appflowy_flutter\build\windows\x64\runner\Release"
+          $exe = Join-Path $release "AppFlowy.exe"
+          if (-not (Test-Path $exe)) {
+            if ($makeExit -ne 0) { exit $makeExit }
+            Write-Error "Windows build did not produce $exe"
+            exit 1
+          }
+          $dest = Join-Path (Get-Location) "appflowy_flutter\product\${{ env.APP_VERSION }}\windows\AppFlowy"
+          if (-not (Test-Path (Join-Path $dest "AppFlowy.exe"))) {
+            New-Item -ItemType Directory -Force -Path $dest | Out-Null
+            & robocopy $release $dest /E /XJ /NFL /NDL /NJH /NJS /NC /NS
+            if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
+          }
+          dart ./scripts/flutter_release_build/build_flowy.dart include-directives . ${{ env.APP_VERSION }}
+
+      - name: Archive portable folder
+        shell: pwsh
+        run: |
+          $src = Join-Path $env:GITHUB_WORKSPACE "${{ env.WINDOWS_APP_RELEASE_PATH }}"
+          if (-not (Test-Path $src)) {
+            Write-Error "Portable folder was not produced: $src"
+            exit 1
+          }
+          $children = @(Get-ChildItem -Force $src)
+          if ($children.Count -eq 0) {
+            Write-Error "Portable folder is empty: $src"
+            exit 1
+          }
+          $zip = Join-Path $env:GITHUB_WORKSPACE "${{ env.WINDOWS_ZIP_NAME }}"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path $children.FullName -DestinationPath $zip
+          if (-not (Test-Path $zip)) {
+            Write-Error "Zip was not created: $zip"
+            exit 1
+          }
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
+          $hashLine = "$hash  ${{ env.WINDOWS_ZIP_NAME }}"
+          Set-Content -Path (Join-Path $env:GITHUB_WORKSPACE "AppFlowy-personal-local-windows-x86_64.sha256.txt") -Value $hashLine -Encoding ascii
+          Write-Host "SHA256 $hashLine"
+
+      - name: Upload portable zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppFlowy-personal-local-windows-x86_64
+          path: |
+            AppFlowy-personal-local-windows-x86_64.zip
+            AppFlowy-personal-local-windows-x86_64.sha256.txt
+          if-no-files-found: error
+          retention-days: 14

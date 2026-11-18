@@ -1,5 +1,6 @@
 import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/workspace/application/recent/recent_views_bloc.dart';
 import 'package:appflowy/workspace/presentation/command_palette/navigation_bloc_extension.dart';
 import 'package:appflowy/workspace/presentation/command_palette/widgets/search_icon.dart';
@@ -49,7 +50,7 @@ class RecentViewsList extends StatelessWidget {
     bool hidePreview,
   ) {
     final workspaceState = context.read<UserWorkspaceBloc?>()?.state;
-    final showAskingAI =
+    final showAskingAI = !PersonalLocalEdition.enabled &&
         workspaceState?.userProfile.workspaceType == WorkspaceTypePB.ServerW;
     return Flexible(
       child: Align(

@@ -1,6 +1,8 @@
 import 'package:appflowy/features/page_access_level/logic/page_access_level_bloc.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/mobile/application/page_style/document_page_style_bloc.dart';
+import 'package:appflowy/personal_local/personal_document_tools.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/plugins/document/application/document_appearance_cubit.dart';
 import 'package:appflowy/plugins/document/application/document_bloc.dart';
 import 'package:appflowy/plugins/document/presentation/banner.dart';
@@ -140,10 +142,21 @@ class _DocumentPageState extends State<DocumentPage>
                     listener: onNotificationAction,
                   ),
                 ],
-                child: AiWriterScrollWrapper(
-                  viewId: widget.view.id,
-                  editorState: editorState,
-                  child: buildEditorPage(context, state),
+                child: Column(
+                  children: [
+                    if (PersonalLocalEdition.enabled)
+                      PersonalDocumentTools(
+                        editorState: editorState,
+                        title: widget.view.name,
+                      ),
+                    Expanded(
+                      child: AiWriterScrollWrapper(
+                        viewId: widget.view.id,
+                        editorState: editorState,
+                        child: buildEditorPage(context, state),
+                      ),
+                    ),
+                  ],
                 ),
               );
             },

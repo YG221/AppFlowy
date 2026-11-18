@@ -1,0 +1,1 @@
+Vendored from desktop_multi_window 0.3.1 (MixinNetwork/flutter-plugins), Apache-2.0. The published pubspec sets `resolution: workspace`, which cannot be consumed outside that workspace, so that one line is removed here. No other source changes.

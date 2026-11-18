@@ -5,6 +5,9 @@ import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/mobile/presentation/search/view_ancestor_cache.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
+import 'package:appflowy/personal_local/personal_local_exchange.dart';
+import 'package:appflowy/personal_local/personal_local_search.dart';
 import 'package:appflowy/plugins/blank/blank.dart';
 import 'package:appflowy/plugins/document/presentation/editor_notification.dart';
 import 'package:appflowy/shared/feature_flags.dart';
@@ -368,6 +371,30 @@ class _SidebarState extends State<_Sidebar> {
                 height: HomeSizes.searchSectionHeight,
                 child: const _SidebarSearchButton(),
               ),
+              if (PersonalLocalEdition.enabled)
+                Padding(
+                  padding: menuHorizontalInset,
+                  child: FlowyButton(
+                    onTap: () {
+                      final workspaceId = context
+                          .read<UserWorkspaceBloc>()
+                          .state
+                          .currentWorkspace
+                          ?.workspaceId;
+                      if (workspaceId == null) {
+                        return;
+                      }
+                      showPersonalDocumentExchange(
+                        context,
+                        workspaceId: workspaceId,
+                      );
+                    },
+                    leftIcon: const FlowySvg(FlowySvgs.icon_document_s),
+                    iconPadding: 12.0,
+                    margin: const EdgeInsets.only(left: 8.0),
+                    text: FlowyText.regular('문서 교환'),
+                  ),
+                ),
             ],
 
             if (context
@@ -569,6 +596,10 @@ class _SidebarSearchButton extends StatelessWidget {
         onTap: () {
           // exit editing mode when doing search to avoid the toolbar showing up
           EditorNotification.exitEditing().post();
+          if (PersonalLocalEdition.enabled) {
+            showPersonalLocalSearch(context);
+            return;
+          }
           final workspaceBloc = context.read<UserWorkspaceBloc?>();
           final spaceBloc = context.read<SpaceBloc?>();
           CommandPalette.of(context).toggle(
