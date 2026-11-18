@@ -18,9 +18,7 @@ bool FlutterWindow::OnCreate() {
   RECT frame = GetClientArea();
 
   flutter::DartProject project(L"data");
-  // Avoid Windows fullscreen freezes in recent Flutter engines when
-  // window_manager changes styles from a platform-channel call.
-  project.set_ui_thread_policy(flutter::UIThreadPolicy::RunOnSeparateThread);
+  // Flutter 3.27's Windows embedding has no DartProject::set_ui_thread_policy.
   std::vector<std::string> entrypoint_args = {"multi_window", id_,
                                               window_argument_};
   project.set_dart_entrypoint_arguments(entrypoint_args);

@@ -88,6 +88,12 @@ jobs:
           flutter config --enable-windows-desktop
           dart ./scripts/flutter_release_build/build_flowy.dart exclude-directives . ${{ env.APP_VERSION }}
           cargo make --env APP_VERSION=${{ env.APP_VERSION }} --profile production-windows-x86 appflowy
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $exe = Join-Path (Get-Location) "appflowy_flutter\build\windows\x64\runner\Release\AppFlowy.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Error "Windows build did not produce $exe"
+            exit 1
+          }
           dart ./scripts/flutter_release_build/build_flowy.dart include-directives . ${{ env.APP_VERSION }}
 
       - name: Archive portable folder
@@ -98,9 +104,18 @@ jobs:
             Write-Error "Portable folder was not produced: $src"
             exit 1
           }
+          $children = @(Get-ChildItem -Force $src)
+          if ($children.Count -eq 0) {
+            Write-Error "Portable folder is empty: $src"
+            exit 1
+          }
           $zip = Join-Path $env:GITHUB_WORKSPACE "${{ env.WINDOWS_ZIP_NAME }}"
           if (Test-Path $zip) { Remove-Item $zip -Force }
-          Compress-Archive -Path (Join-Path $src '*') -DestinationPath $zip
+          Compress-Archive -Path $children.FullName -DestinationPath $zip
+          if (-not (Test-Path $zip)) {
+            Write-Error "Zip was not created: $zip"
+            exit 1
+          }
           $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
           $hashLine = "$hash  ${{ env.WINDOWS_ZIP_NAME }}"
           Set-Content -Path (Join-Path $env:GITHUB_WORKSPACE "AppFlowy-personal-local-windows-x86_64.sha256.txt") -Value $hashLine -Encoding ascii
