@@ -48,9 +48,9 @@ std::string MultiWindowManager::Create(const flutter::EncodableMap* args) {
 
   auto flutter_window = std::make_unique<FlutterWindow>(window_id, config);
 
-  std::wstring title = L"";
-  Win32Window::Point origin(10, 10);
-  Win32Window::Size size(800, 600);
+  std::wstring title = L"AppFlowy Note";
+  Win32Window::Point origin(80, 80);
+  Win32Window::Size size(420, 560);
 
   if (!flutter_window->Create(title, origin, size)) {
     std::cerr << "Failed to create window." << std::endl;

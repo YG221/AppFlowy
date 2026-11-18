@@ -26,11 +26,12 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
-  DesktopMultiWindowSetWindowCreatedCallback([](void* controller) {
-    auto* flutter_view_controller =
-        reinterpret_cast<flutter::FlutterViewController*>(controller);
-    RegisterPlugins(flutter_view_controller->engine());
-  });
+  // A second engine must not register the Rust backend, bitsdojo, or
+  // window_manager. Those plugins abort the process (ucrtbase 0xc0000409)
+  // when they start twice. The popout reads its text from Dart entrypoint
+  // arguments and only needs the multi-window channel, which Create()
+  // registers itself.
+  DesktopMultiWindowSetWindowCreatedCallback(nullptr);
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {

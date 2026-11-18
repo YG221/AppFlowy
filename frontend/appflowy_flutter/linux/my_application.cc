@@ -42,8 +42,10 @@ static void my_application_activate(GApplication *application)
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+  // Do not register the full plugin set on a secondary view. That starts a
+  // second Rust core in this process. The popout uses entrypoint arguments.
   desktop_multi_window_plugin_set_window_created_callback(
-      [](FlPluginRegistry* registry) { fl_register_plugins(registry); });
+      [](FlPluginRegistry* registry) { (void)registry; });
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }
