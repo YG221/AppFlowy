@@ -5,6 +5,11 @@ name: personal-local-windows-portable
 # dispatch stays available. The default branch is not modified.
 on:
   workflow_dispatch:
+    inputs:
+      ui_only:
+        description: Run only the published-zip UI test
+        type: boolean
+        default: false
   push:
     branches:
       - cursor/personal-local-edition-8fed
@@ -20,6 +25,7 @@ env:
 
 jobs:
   build-for-windows:
+    if: github.event_name != 'workflow_dispatch' || inputs.ui_only == false
     name: windows-x64 portable zip
     # windows-2019 was removed on 2025-06-30. windows-2022 still has
     # Visual Studio 2022, which this Rust toolchain can use.
@@ -138,3 +144,10 @@ jobs:
             AppFlowy-personal-local-windows-x86_64.sha256.txt
           if-no-files-found: error
           retention-days: 14
+
+  # The dedicated UI workflow is not on main, so GitHub will not start it
+  # from workflow_dispatch until it has run once. Calling it from this
+  # already-registered workflow lets a manual run use the branch file.
+  drive-published-zip:
+    if: github.event_name == 'push' || inputs.ui_only == true
+    uses: ./.github/workflows/personal_local_windows_ui.yml

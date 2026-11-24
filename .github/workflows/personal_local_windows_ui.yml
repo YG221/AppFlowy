@@ -6,6 +6,7 @@ name: personal-local-windows-ui
 # and it does not move the v0.1 or v0.2 release tags.
 on:
   workflow_dispatch:
+  workflow_call:
   push:
     branches:
       - cursor/personal-local-edition-8fed
