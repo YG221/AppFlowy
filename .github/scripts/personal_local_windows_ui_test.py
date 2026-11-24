@@ -1,4 +1,5 @@
 # Drives the extracted personal-local Windows app with UI Automation.
+# Runs on a GitHub-hosted windows-2022 image.
 # Synthetic notes only. Does not read or write a user's installed data.
 import json
 import os
