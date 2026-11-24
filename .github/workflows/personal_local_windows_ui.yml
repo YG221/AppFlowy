@@ -1,0 +1,79 @@
+name: personal-local-windows-ui
+
+# Drives the published personal-local Windows zip on a GitHub-hosted
+# windows-2022 runner. That image is Windows Server 2022 Datacenter.
+# This file lives only on the edition branch. It does not change main,
+# and it does not move the v0.1 or v0.2 release tags.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/personal-local-edition-8fed
+
+jobs:
+  drive-published-zip:
+    name: windows-2022 ui
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      ZIP_URL: https://github.com/YG221/AppFlowy/releases/download/personal-local-v0.2-win/AppFlowy-personal-local-windows-x86_64.zip
+      ZIP_SHA256: 7fd6d9367e9386a7bb916d09bd07837c943a575869d53a05d7985ecff006209e
+    steps:
+      - name: Record runner image
+        shell: pwsh
+        run: |
+          $os = Get-CimInstance Win32_OperatingSystem
+          Write-Host "OS Caption: $($os.Caption)"
+          Write-Host "OS Version: $($os.Version)"
+          Write-Host "OS Architecture: $($os.OSArchitecture)"
+          "OS Caption: $($os.Caption)`nOS Version: $($os.Version)`nOS Architecture: $($os.OSArchitecture)" |
+            Set-Content -Encoding utf8 "$env:RUNNER_TEMP\runner-os.txt"
+
+      - name: Checkout test script
+        uses: actions/checkout@v4
+
+      - name: Download the published zip and check SHA256
+        shell: pwsh
+        run: |
+          $dest = Join-Path $env:RUNNER_TEMP "personal-local-zip"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          $zip = Join-Path $dest "AppFlowy-personal-local-windows-x86_64.zip"
+          curl.exe -fsSL -o $zip $env:ZIP_URL
+          if (-not (Test-Path $zip)) { Write-Error "Download failed"; exit 1 }
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
+          Write-Host "Downloaded SHA256 $hash"
+          if ($hash -ne $env:ZIP_SHA256) {
+            Write-Error "SHA256 mismatch. expected $($env:ZIP_SHA256) got $hash"
+            exit 1
+          }
+          $extract = Join-Path $dest "app"
+          Expand-Archive -Path $zip -DestinationPath $extract -Force
+          $exe = Get-ChildItem -Path $extract -Filter AppFlowy.exe -Recurse | Select-Object -First 1
+          if (-not $exe) { Write-Error "AppFlowy.exe was not in the zip"; exit 1 }
+          Write-Host "EXE $($exe.FullName)"
+          Set-Content -Encoding ascii "$env:RUNNER_TEMP\appflowy-exe.txt" $exe.FullName
+
+      - name: Install UI automation packages
+        shell: pwsh
+        run: py -3 -m pip install --disable-pip-version-check pywinauto pillow comtypes
+
+      - name: Drive the app
+        shell: pwsh
+        run: |
+          $env:APPFLOWY_EXE = Get-Content "$env:RUNNER_TEMP\appflowy-exe.txt" -Raw
+          $env:UI_ARTIFACTS = Join-Path $env:GITHUB_WORKSPACE "ui-artifacts"
+          $env:PYTHONIOENCODING = "utf-8"
+          $env:TEST_START = (Get-Date).ToString("o")
+          New-Item -ItemType Directory -Force -Path $env:UI_ARTIFACTS | Out-Null
+          Copy-Item "$env:RUNNER_TEMP\runner-os.txt" (Join-Path $env:UI_ARTIFACTS "runner-os.txt")
+          py -3 .github/scripts/personal_local_windows_ui_test.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: personal-local-v02-ui-screenshots
+          path: ui-artifacts/**
+          if-no-files-found: warn
+          retention-days: 14
