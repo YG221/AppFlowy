@@ -1,5 +1,6 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/shared/feature_flags.dart';
 import 'package:appflowy/workspace/application/settings/settings_dialog_bloc.dart';
 import 'package:appflowy/workspace/presentation/settings/widgets/settings_menu_element.dart';
@@ -86,13 +87,14 @@ class SettingsMenu extends StatelessWidget {
               icon: const FlowySvg(FlowySvgs.settings_page_bell_m),
               changeSelectedPage: changeSelectedPage,
             ),
-            SettingsMenuElement(
-              page: SettingsPage.cloud,
-              selectedPage: currentPage,
-              label: LocaleKeys.settings_menu_cloudSettings.tr(),
-              icon: const FlowySvg(FlowySvgs.settings_page_cloud_m),
-              changeSelectedPage: changeSelectedPage,
-            ),
+            if (!PersonalLocalEdition.enabled)
+              SettingsMenuElement(
+                page: SettingsPage.cloud,
+                selectedPage: currentPage,
+                label: LocaleKeys.settings_menu_cloudSettings.tr(),
+                icon: const FlowySvg(FlowySvgs.settings_page_cloud_m),
+                changeSelectedPage: changeSelectedPage,
+              ),
             SettingsMenuElement(
               page: SettingsPage.shortcuts,
               selectedPage: currentPage,
@@ -100,15 +102,16 @@ class SettingsMenu extends StatelessWidget {
               icon: const FlowySvg(FlowySvgs.settings_page_keyboard_m),
               changeSelectedPage: changeSelectedPage,
             ),
-            SettingsMenuElement(
-              page: SettingsPage.ai,
-              selectedPage: currentPage,
-              label: LocaleKeys.settings_aiPage_menuLabel.tr(),
-              icon: const FlowySvg(
-                FlowySvgs.settings_page_ai_m,
+            if (!PersonalLocalEdition.enabled)
+              SettingsMenuElement(
+                page: SettingsPage.ai,
+                selectedPage: currentPage,
+                label: LocaleKeys.settings_aiPage_menuLabel.tr(),
+                icon: const FlowySvg(
+                  FlowySvgs.settings_page_ai_m,
+                ),
+                changeSelectedPage: changeSelectedPage,
               ),
-              changeSelectedPage: changeSelectedPage,
-            ),
             if (userProfile.workspaceType == WorkspaceTypePB.ServerW &&
                 currentUserRole != null &&
                 currentUserRole != AFRolePB.Guest)
@@ -181,13 +184,14 @@ class SimpleSettingsMenu extends StatelessWidget {
               child: SeparatedColumn(
                 separatorBuilder: () => const VSpace(16),
                 children: [
-                  SettingsMenuElement(
-                    page: SettingsPage.cloud,
-                    selectedPage: SettingsPage.cloud,
-                    label: LocaleKeys.settings_menu_cloudSettings.tr(),
-                    icon: const Icon(Icons.sync),
-                    changeSelectedPage: () {},
-                  ),
+                  if (!PersonalLocalEdition.enabled)
+                    SettingsMenuElement(
+                      page: SettingsPage.cloud,
+                      selectedPage: SettingsPage.cloud,
+                      label: LocaleKeys.settings_menu_cloudSettings.tr(),
+                      icon: const Icon(Icons.sync),
+                      changeSelectedPage: () {},
+                    ),
                   if (kDebugMode)
                     SettingsMenuElement(
                       // no need to translate this page

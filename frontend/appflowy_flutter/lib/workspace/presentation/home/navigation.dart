@@ -32,7 +32,9 @@ class NavigationNotifier with ChangeNotifier {
 }
 
 class FlowyNavigation extends StatelessWidget {
-  const FlowyNavigation({super.key});
+  const FlowyNavigation({super.key, this.flex = 1});
+
+  final int flex;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +47,7 @@ class FlowyNavigation extends StatelessWidget {
       },
       update: (_, notifier, controller) => controller!..update(notifier),
       child: Expanded(
+        flex: flex,
         child: Row(
           children: [
             _renderCollapse(context),

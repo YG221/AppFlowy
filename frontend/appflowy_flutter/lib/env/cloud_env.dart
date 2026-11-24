@@ -2,6 +2,7 @@ import 'package:appflowy/core/config/kv.dart';
 import 'package:appflowy/core/config/kv_keys.dart';
 import 'package:appflowy/env/backend_env.dart';
 import 'package:appflowy/env/env.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/plugins/shared/share/constants.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy_backend/log.dart';
@@ -52,6 +53,15 @@ const String kAppflowyCloudUrl = "https://beta.appflowy.cloud";
 /// if no valid setting is found.
 ///
 Future<AuthenticatorType> getAuthenticatorType() async {
+  if (PersonalLocalEdition.enabled) {
+    final stored = await getIt<KeyValueStorage>().get(KVKeys.kCloudType);
+    if (stored == null && !integrationMode().isUnitTest) {
+      await getIt<KeyValueStorage>().set(KVKeys.kCloudType, '0');
+    }
+    // A stored non-zero type is left unchanged so a later official copy can
+    // still see it. This process does not contact that cloud.
+    return AuthenticatorType.local;
+  }
   final value = await getIt<KeyValueStorage>().get(KVKeys.kCloudType);
   if (value == null && !integrationMode().isUnitTest) {
     // if the cloud type is not set, then set it to AppFlowy Cloud as default.
@@ -202,6 +212,18 @@ class AppFlowyCloudSharedEnv {
   AuthenticatorType get authenticatorType => _authenticatorType;
 
   static Future<AppFlowyCloudSharedEnv> fromEnv() async {
+    if (PersonalLocalEdition.enabled) {
+      return AppFlowyCloudSharedEnv(
+        authenticatorType: AuthenticatorType.local,
+        appflowyCloudConfig: AppFlowyCloudConfiguration(
+          base_url: '',
+          ws_base_url: '',
+          gotrue_url: '',
+          enable_sync_trace: false,
+          base_web_domain: '',
+        ),
+      );
+    }
     // If [Env.enableCustomCloud] is true, then use the custom cloud configuration.
     if (Env.enableCustomCloud) {
       // Use the custom cloud configuration.

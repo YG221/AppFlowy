@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import 'package:appflowy/core/config/kv.dart';
 import 'package:appflowy/core/config/kv_keys.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
+import 'package:appflowy/personal_local/portable_data_path.dart';
 import 'package:appflowy/shared/patterns/common_patterns.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy_backend/log.dart';
@@ -11,7 +13,7 @@ import 'package:path/path.dart' as p;
 
 import '../../../startup/tasks/prelude.dart';
 
-const appFlowyDataFolder = "AppFlowyDataDoNotRename";
+const appFlowyDataFolder = portableDataFolderName;
 
 class ApplicationDataStorage {
   ApplicationDataStorage();
@@ -65,6 +67,16 @@ class ApplicationDataStorage {
       return _cachePath!;
     }
 
+    final portable = _portableDataDirectory();
+    if (portable != null) {
+      final directory = Directory(portable);
+      if (!directory.existsSync()) {
+        await directory.create(recursive: true);
+      }
+      _cachePath = portable;
+      return portable;
+    }
+
     final response = await getIt<KeyValueStorage>().get(KVKeys.pathLocation);
 
     String path;
@@ -85,6 +97,18 @@ class ApplicationDataStorage {
 
     return path;
   }
+}
+
+String? _portableDataDirectory() {
+  if (kIsWeb) {
+    return null;
+  }
+  return portableDataDirectory(
+    enabled: PersonalLocalEdition.enabled,
+    releaseMode: kReleaseMode,
+    isWindows: Platform.isWindows,
+    resolvedExecutable: Platform.resolvedExecutable,
+  );
 }
 
 class MockApplicationDataStorage extends ApplicationDataStorage {

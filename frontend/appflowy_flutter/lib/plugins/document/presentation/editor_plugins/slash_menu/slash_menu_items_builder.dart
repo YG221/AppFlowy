@@ -1,3 +1,4 @@
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/plugins/document/application/document_bloc.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/ai/operations/ai_writer_node_extension.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/plugins.dart';
@@ -62,8 +63,8 @@ List<SelectionMenuItem> _defaultSlashMenuItems({
 }) {
   return [
     // ai
-    if (!isEmpty) continueWritingSlashMenuItem,
-    aiWriterSlashMenuItem,
+    if (!PersonalLocalEdition.enabled && !isEmpty) continueWritingSlashMenuItem,
+    if (!PersonalLocalEdition.enabled) aiWriterSlashMenuItem,
 
     paragraphSlashMenuItem,
 

@@ -2,6 +2,7 @@ import 'package:appflowy/features/share_tab/data/repositories/rust_share_with_us
 import 'package:appflowy/features/share_tab/logic/share_tab_bloc.dart';
 import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/plugins/database/application/tab_bar_bloc.dart';
 import 'package:appflowy/plugins/shared/share/_shared.dart';
 import 'package:appflowy/plugins/shared/share/share_bloc.dart';
@@ -72,7 +73,7 @@ class ShareButton extends StatelessWidget {
         child: BlocBuilder<ShareBloc, ShareState>(
           builder: (context, state) {
             final tabs = [
-              if (state.enablePublish) ...[
+              if (!PersonalLocalEdition.enabled && state.enablePublish) ...[
                 // share the same permission with publish
                 ShareMenuTab.share,
                 ShareMenuTab.publish,

@@ -3,8 +3,11 @@ import 'dart:io';
 
 import 'package:appflowy/env/backend_env.dart';
 import 'package:appflowy/env/cloud_env.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
+import 'package:appflowy/personal_local/portable_data_path.dart';
 import 'package:appflowy/user/application/auth/device_id.dart';
 import 'package:appflowy_backend/appflowy_backend.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -25,8 +28,13 @@ class InitRustSDKTask extends LaunchTask {
   Future<void> initialize(LaunchContext context) async {
     await super.initialize(context);
 
-    final root = await getApplicationSupportDirectory();
     final applicationPath = await appFlowyApplicationDataDirectory();
+    final portable = _windowsPortableDataDirectory();
+    // The portable folder is the whole data root. Do not also anchor logs
+    // or config under %APPDATA%.
+    final root = portable == null
+        ? await getApplicationSupportDirectory()
+        : applicationPath;
     final dir = customApplicationPath ?? applicationPath;
     final deviceId = await getDeviceId();
 
@@ -65,9 +73,31 @@ AppFlowyConfiguration _makeAppFlowyConfiguration(
   );
 }
 
+String? _windowsPortableDataDirectory() {
+  if (kIsWeb) {
+    return null;
+  }
+  return portableDataDirectory(
+    enabled: PersonalLocalEdition.enabled,
+    releaseMode: kReleaseMode,
+    isWindows: Platform.isWindows,
+    resolvedExecutable: Platform.resolvedExecutable,
+  );
+}
+
 /// The default directory to store the user data. The directory can be
-/// customized by the user via the [ApplicationDataStorage]
+/// customized by the user via the [ApplicationDataStorage]. A Windows
+/// release of this edition always uses the folder next to the executable.
 Future<Directory> appFlowyApplicationDataDirectory() async {
+  final portable = _windowsPortableDataDirectory();
+  if (portable != null) {
+    final directory = Directory(portable);
+    if (!directory.existsSync()) {
+      await directory.create(recursive: true);
+    }
+    return directory;
+  }
+
   switch (integrationMode()) {
     case IntegrationMode.develop:
       final Directory documentsDir = await getApplicationSupportDirectory()

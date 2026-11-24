@@ -1,6 +1,7 @@
 import 'package:appflowy/env/cloud_env.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/auth/auth_service.dart';
 import 'package:appflowy/user/application/password/password_bloc.dart';
@@ -32,6 +33,9 @@ class AccountSignInOutSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (PersonalLocalEdition.enabled) {
+      return const SizedBox.shrink();
+    }
     final theme = AppFlowyTheme.of(context);
     return Row(
       children: [

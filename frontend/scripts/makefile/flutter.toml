@@ -192,21 +192,22 @@ script = [
 script_runner = "@shell"
 
 [tasks.copy-to-product-windows]
-script = [
-  """
-  product_path= set ${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/appflowy_flutter/product/${APP_VERSION}
-  output_path= set ${product_path}/${TARGET_OS}
-  if is_path_exists ${output_path}
-    rm -r ${output_path}/
-  fi
-  mkdir ${output_path}
-
-  product= set ${PRODUCT_NAME}
-  glob_cp ${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/appflowy_flutter/build/${TARGET_OS}/${BUILD_ARCHS}/runner/${FLUTTER_OUTPUT_DIR}/**/* \
-  ${output_path}/${product}
-  """,
-]
-script_runner = "@duckscript"
+script = """
+@echo off
+set "SRC=${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}\\appflowy_flutter\\build\\${TARGET_OS}\\${BUILD_ARCHS}\\runner\\${FLUTTER_OUTPUT_DIR}"
+set "DEST=${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}\\appflowy_flutter\\product\\${APP_VERSION}\\${TARGET_OS}\\${PRODUCT_NAME}"
+if not exist "%SRC%\\${PRODUCT_NAME}.exe" (
+  echo Release executable is missing: %SRC%
+  exit /b 1
+)
+if exist "%DEST%" rmdir /s /q "%DEST%"
+mkdir "%DEST%"
+rem duckscript glob_cp overflows the stack on this Release tree.
+robocopy "%SRC%" "%DEST%" /E /XJ /NFL /NDL /NJH /NJS /NC /NS
+if %ERRORLEVEL% GEQ 8 exit /b %ERRORLEVEL%
+exit /b 0
+"""
+script_runner = "@shell"
 
 
 # The following tasks will create an archive that will be used on the GitHub Releases section

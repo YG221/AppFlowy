@@ -13,6 +13,8 @@ import 'package:appflowy/mobile/presentation/favorite/mobile_favorite_page.dart'
 import 'package:appflowy/mobile/presentation/notifications/mobile_notifications_multiple_select_page.dart';
 import 'package:appflowy/mobile/presentation/notifications/mobile_notifications_screen.dart';
 import 'package:appflowy/mobile/presentation/presentation.dart';
+import 'package:appflowy/personal_local/personal_local_bootstrap.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/mobile/presentation/search/mobile_search_page.dart';
 import 'package:appflowy/mobile/presentation/setting/cloud/appflowy_cloud_page.dart';
 import 'package:appflowy/mobile/presentation/setting/font/font_picker_screen.dart';
@@ -546,7 +548,9 @@ GoRoute _skipLogInScreenRoute() {
     path: SkipLogInScreen.routeName,
     pageBuilder: (context, state) {
       return CustomTransitionPage(
-        child: const SkipLogInScreen(),
+        child: PersonalLocalEdition.enabled
+            ? const PersonalLocalBootstrap()
+            : const SkipLogInScreen(),
         transitionsBuilder: _buildFadeTransition,
         transitionDuration: _slowDuration,
       );
@@ -559,7 +563,9 @@ GoRoute _signInScreenRoute() {
     path: SignInScreen.routeName,
     pageBuilder: (context, state) {
       return CustomTransitionPage(
-        child: const SignInScreen(),
+        child: PersonalLocalEdition.enabled
+            ? const PersonalLocalBootstrap()
+            : const SignInScreen(),
         transitionsBuilder: _buildFadeTransition,
         transitionDuration: _slowDuration,
       );

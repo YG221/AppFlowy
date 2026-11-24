@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:appflowy/core/config/kv.dart';
 import 'package:appflowy/core/config/kv_keys.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:collection/collection.dart';
 
@@ -96,6 +97,10 @@ enum FeatureFlag {
   }
 
   bool get isOn {
+    if (PersonalLocalEdition.enabled &&
+        PersonalLocalEdition.disabledFeatureFlags.contains(name)) {
+      return false;
+    }
     if ([
       FeatureFlag.planBilling,
       // release this feature in version 0.6.1

@@ -5,6 +5,8 @@ import 'dart:math';
 import 'package:appflowy/core/frameless_window.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/personal_local/header_search_bar.dart';
+import 'package:appflowy/personal_local/personal_local_edition.dart';
 import 'package:appflowy/plugins/blank/blank.dart';
 import 'package:appflowy/shared/window_title_bar.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
@@ -830,7 +832,14 @@ class _HomeTopBarState extends State<HomeTopBar>
         child: Row(
           children: [
             HSpace(widget.layout.menuSpacing),
-            const FlowyNavigation(),
+            FlowyNavigation(flex: PersonalLocalEdition.enabled ? 2 : 1),
+            if (PersonalLocalEdition.enabled) ...[
+              const HSpace(12),
+              const Expanded(
+                flex: 5,
+                child: PersonalHeaderSearchBar(),
+              ),
+            ],
             const HSpace(16),
             ChangeNotifierProvider.value(
               value: Provider.of<PageNotifier>(context, listen: false),
